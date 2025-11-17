@@ -72,20 +72,20 @@ async def seed_demo():
     if db["post"].count_documents({}) == 0:
         for post in [
             {
+                "user_id": "You",
+                "caption": "Today’s progress with my Cutty plant — Stage: Growing. Two new leaves unfurled and the stem looks stronger. Gave it a gentle morning mist and rotated it toward the light. Felt a small spark of joy seeing that tiny change. Anyone else seeing this stage now?",
+                "image_url": "https://images.unsplash.com/photo-1446071103084-c257b5f70672?q=80&w=1600&auto=format&fit=crop",
+                "stage": "Growing",
+                "hashtags": ["#MindfulMoment", "#CuttyProgress"],
+                "cheers": 18,
+            },
+            {
                 "user_id": "Maya",
                 "caption": "Day 7 – first sprout! Feeling calmer already.",
                 "image_url": "https://images.unsplash.com/photo-1495640452828-3df6795cf69b?q=80&w=1600&auto=format&fit=crop",
                 "stage": "Seedling",
                 "hashtags": ["#SpringStart", "#FirstSprout"],
                 "cheers": 12,
-            },
-            {
-                "user_id": "Ava",
-                "caption": "Repotted today. Slowed down and breathed in the soil smell.",
-                "image_url": "https://images.unsplash.com/photo-1466721591366-2d5fba72006d?q=80&w=1600&auto=format&fit=crop",
-                "stage": "Growing",
-                "hashtags": ["#MindfulMoment"],
-                "cheers": 34,
             },
         ]:
             create_document("post", post)
@@ -112,12 +112,24 @@ async def list_events():
     items = get_documents("event")
     return to_str_id(items)
 
-# Community demo (kept but with plant photos)
+# Community demo (updated to plant-growing post first)
 @app.get("/community/demo")
 async def community_demo():
     return [
         {
             "id": "1",
+            "user": {"name": "You", "avatar_url": None},
+            "image_url": "https://images.unsplash.com/photo-1446071103084-c257b5f70672?q=80&w=1600&auto=format&fit=crop",
+            "caption": "Today’s progress with my Cutty plant — Stage: Growing. Two new leaves unfurled and the stem looks stronger. Gave it a gentle morning mist and rotated it toward the light. Felt a small spark of joy seeing that tiny change. Anyone else seeing this stage now?",
+            "stage": "Growing",
+            "hashtags": ["#MindfulMoment", "#CuttyProgress"],
+            "cheers": 18,
+            "comments": [
+                {"user": "Leo", "text": "Love the gentle misting routine 🌿"}
+            ]
+        },
+        {
+            "id": "2",
             "user": {"name": "Maya", "avatar_url": None},
             "image_url": "https://images.unsplash.com/photo-1495640452828-3df6795cf69b?q=80&w=1600&auto=format&fit=crop",
             "caption": "Day 7 – first sprout! Feeling calmer already.",
@@ -125,18 +137,8 @@ async def community_demo():
             "hashtags": ["#SpringStart", "#FirstSprout"],
             "cheers": 12,
             "comments": [
-                {"user": "Leo", "text": "So sweet! Keep going 🌱"}
+                {"user": "Ava", "text": "Sprout squad! 🌱"}
             ]
-        },
-        {
-            "id": "2",
-            "user": {"name": "Ava", "avatar_url": None},
-            "image_url": "https://images.unsplash.com/photo-1466721591366-2d5fba72006d?q=80&w=1600&auto=format&fit=crop",
-            "caption": "Repotted today. Slowed down and breathed in the soil smell.",
-            "stage": "Growing",
-            "hashtags": ["#MindfulMoment"],
-            "cheers": 34,
-            "comments": []
         }
     ]
 
