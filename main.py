@@ -55,8 +55,8 @@ async def seed_demo():
 
     if db["product"].count_documents({}) == 0:
         for p in [
-            {"title": "The Cutty Box", "description": "DIY Dahlia kit with soil, pot, fertilizer, and mini greenhouse.", "price": 39.0, "image_url": "https://images.unsplash.com/photo-1526378722484-bd91ca387e72?q=80&w=1200&auto=format&fit=crop", "in_stock": True},
-            {"title": "Refill Kit", "description": "Soil + nutrients refill to keep growing.", "price": 12.0, "image_url": "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1200&auto=format&fit=crop", "in_stock": True},
+            {"title": "The Cutty Box", "description": "DIY Dahlia kit with soil, pot, fertilizer, and mini greenhouse.", "price": 12.95, "image_url": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop", "in_stock": True},
+            {"title": "Refill Kit", "description": "Soil + nutrients refill to keep growing.", "price": 12.0, "image_url": "https://images.unsplash.com/photo-1589998059171-988d887df646?q=80&w=1200&auto=format&fit=crop", "in_stock": True},
         ]:
             create_document("product", p)
         created["product"] = 2
@@ -97,7 +97,15 @@ async def seed_demo():
 @app.get("/products")
 async def list_products():
     items = get_documents("product")
-    return to_str_id(items)
+    items = to_str_id(items)
+    # Normalize: ensure current price and imagery reflect latest decisions
+    for it in items:
+        if str(it.get("title", "")).lower().strip() == "the cutty box":
+            it["price"] = 12.95
+            it.setdefault("image_url", "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop")
+        if str(it.get("title", "")).lower().strip() == "refill kit":
+            it.setdefault("image_url", "https://images.unsplash.com/photo-1589998059171-988d887df646?q=80&w=1200&auto=format&fit=crop")
+    return items
 
 @app.get("/events")
 async def list_events():
