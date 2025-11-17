@@ -55,7 +55,7 @@ async def seed_demo():
 
     if db["product"].count_documents({}) == 0:
         for p in [
-            {"title": "The Cutty Box", "description": "DIY Dahlia kit with soil, pot, fertilizer, and mini greenhouse.", "price": 12.95, "image_url": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop", "in_stock": True},
+            {"title": "The Cutty Box", "description": "DIY Dahlia kit with soil, pot, fertilizer, and mini greenhouse.", "price": 12.95, "image_url": "https://cdn.discordapp.com/attachments/692077531272052768/1440123736064917534/image0.jpg?ex=691d033e&is=691bb1be&hm=aab8d25f1609bb5aafae87cf0d0ab5f4e9fdfa113989b6cfd786be0c943eff79&", "in_stock": True},
             {"title": "Refill Kit", "description": "Soil + nutrients refill to keep growing.", "price": 12.0, "image_url": "https://images.unsplash.com/photo-1589998059171-988d887df646?q=80&w=1200&auto=format&fit=crop", "in_stock": True},
         ]:
             create_document("product", p)
@@ -102,7 +102,7 @@ async def list_products():
     for it in items:
         if str(it.get("title", "")).lower().strip() == "the cutty box":
             it["price"] = 12.95
-            it.setdefault("image_url", "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200&auto=format&fit=crop")
+            it["image_url"] = "https://cdn.discordapp.com/attachments/692077531272052768/1440123736064917534/image0.jpg?ex=691d033e&is=691bb1be&hm=aab8d25f1609bb5aafae87cf0d0ab5f4e9fdfa113989b6cfd786be0c943eff79&"
         if str(it.get("title", "")).lower().strip() == "refill kit":
             it.setdefault("image_url", "https://images.unsplash.com/photo-1589998059171-988d887df646?q=80&w=1200&auto=format&fit=crop")
     return items
