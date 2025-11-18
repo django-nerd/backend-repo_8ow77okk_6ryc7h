@@ -70,15 +70,8 @@ async def seed_demo():
         created["event"] = 2
 
     if db["post"].count_documents({}) == 0:
-        for post in [
-            {
-                "user_id": "You",
-                "caption": "Today’s progress with my Cutty plant — Stage: Growing. Two new leaves unfurled and the stem looks stronger. Gave it a gentle morning mist and rotated it toward the light. Felt a small spark of joy seeing that tiny change. Anyone else seeing this stage now?",
-                "image_url": "https://images.unsplash.com/photo-1446071103084-c257b5f70672?q=80&w=1600&auto=format&fit=crop",
-                "stage": "Growing",
-                "hashtags": ["#MindfulMoment", "#CuttyProgress"],
-                "cheers": 18,
-            },
+        # Insert both demo posts
+        demo_posts = [
             {
                 "user_id": "Maya",
                 "caption": "Day 7 – first sprout! Feeling calmer already.",
@@ -87,9 +80,18 @@ async def seed_demo():
                 "hashtags": ["#SpringStart", "#FirstSprout"],
                 "cheers": 12,
             },
-        ]:
+            {
+                "user_id": "You",
+                "caption": "Today’s progress with my Cutty plant — Stage: Growing. Two new leaves unfurled and the stem looks stronger. Gave it a gentle morning mist and rotated it toward the light. Felt a small spark of joy seeing that tiny change. Anyone else seeing this stage now?",
+                "image_url": "https://images.unsplash.com/photo-1446071103084-c257b5f70672?q=80&w=1600&auto=format&fit=crop",
+                "stage": "Growing",
+                "hashtags": ["#MindfulMoment", "#CuttyProgress"],
+                "cheers": 18,
+            },
+        ]
+        for post in demo_posts:
             create_document("post", post)
-        created["post"] = 2
+        created["post"] = len(demo_posts)
 
     return {"seeded": created}
 
@@ -159,6 +161,12 @@ async def community_posts():
     if db is None:
         return []
     posts = list(db["post"].find({}, sort=[("_id", -1)]))
+    # Prioritize the custom demo post (You + Growing) at the top
+    for p in posts:
+        p["_priority"] = 1 if (str(p.get("user_id", "")).lower() == "you" and str(p.get("stage", "")).lower() == "growing") else 0
+        ca = p.get("created_at")
+        p["_created_str"] = ca.isoformat() if hasattr(ca, "isoformat") else str(ca or "")
+    posts.sort(key=lambda x: (x.get("_priority", 0), x.get("_created_str", "")), reverse=True)
     to_str_id(posts)
     # attach comments for each post (latest 5)
     for p in posts:
@@ -166,6 +174,8 @@ async def community_posts():
         comments = list(db["comment"].find({"post_id": pid}, sort=[("_id", -1)], limit=5))
         to_str_id(comments)
         p["comments"] = [{"id": c.get("id"), "user_id": c.get("user_id"), "text": c.get("text")} for c in comments]
+        p.pop("_priority", None)
+        p.pop("_created_str", None)
     return posts
 
 @app.post("/community/posts")
@@ -202,6 +212,49 @@ async def add_comment(post_id: str, data: CreateComment):
     payload = {"post_id": post_id, "user_id": data.name.strip() or "guest", "text": data.text}
     doc_id = create_document("comment", payload)
     return {"id": doc_id, "ok": True}
+
+# Maintenance utilities to help manage demo data
+@app.post("/community/reset-demo")
+async def reset_demo_posts():
+    if db is None:
+        raise HTTPException(500, "Database not available")
+    db["comment"].delete_many({})
+    db["post"].delete_many({})
+    demo_posts = [
+        {
+            "user_id": "Maya",
+            "caption": "Day 7 – first sprout! Feeling calmer already.",
+            "image_url": "https://images.unsplash.com/photo-1495640452828-3df6795cf69b?q=80&w=1600&auto=format&fit=crop",
+            "stage": "Seedling",
+            "hashtags": ["#SpringStart", "#FirstSprout"],
+            "cheers": 12,
+        },
+        {
+            "user_id": "You",
+            "caption": "Today’s progress with my Cutty plant — Stage: Growing. Two new leaves unfurled and the stem looks stronger. Gave it a gentle morning mist and rotated it toward the light. Felt a small spark of joy seeing that tiny change. Anyone else seeing this stage now?",
+            "image_url": "https://images.unsplash.com/photo-1446071103084-c257b5f70672?q=80&w=1600&auto=format&fit=crop",
+            "stage": "Growing",
+            "hashtags": ["#MindfulMoment", "#CuttyProgress"],
+            "cheers": 18,
+        },
+    ]
+    for p in demo_posts:
+        create_document("post", p)
+    return {"ok": True, "reset": 2}
+
+@app.post("/community/purge-unwanted")
+async def purge_unwanted_posts():
+    if db is None:
+        raise HTTPException(500, "Database not available")
+    # Remove any legacy demo posts that match old captions like "Repotted today" or mention "soil smell"
+    res = db["post"].delete_many({
+        "$or": [
+            {"caption": {"$regex": "^Repotted", "$options": "i"}},
+            {"caption": {"$regex": "Repotted today", "$options": "i"}},
+            {"caption": {"$regex": "soil smell", "$options": "i"}},
+        ]
+    })
+    return {"ok": True, "deleted": getattr(res, 'deleted_count', 0)}
 
 # Simple create endpoints for newsletter/contact
 @app.post("/newsletter")
